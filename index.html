@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4자리 숫자 야구 게임</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .game-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .info {
+            font-size: 14px;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .input-area {
+            margin: 20px 0;
+        }
+
+        #number-display {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .button-row button {
+            width: 70px; /* 버튼 크기 키움 */
+            height: 70px; /* 버튼 크기 키움 */
+            margin: 5px;
+            font-size: 22px; /* 글씨 크기 키움 */
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button-row button:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            margin-top: 20px;
+            text-align: left;
+            color: #333;
+        }
+
+        #result-list {
+            list-style-type: none;
+        }
+
+        #reset {
+            margin-top: 20px;
+            background-color: #f44336;
+        }
+
+        #attempt-count {
+            font-size: 16px;
+            margin-top: 10px;
+            color: #333;
+        }
+
+        /* 크기 변경된 버튼들 */
+        #submit, #clear {
+            width: 120px;
+            height: 50px;
+            font-size: 20px;
+            margin-top: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1>4자리 숫자 야구 게임</h1>
+        <div class="info">
+            <p>0부터 9까지의 4개의 숫자를 맞추세요! (동일한 숫자도 허용)</p>
+            <p>숫자 버튼을 클릭하여 4자리 숫자를 입력하고 "시도" 버튼을 눌러 결과를 확인하세요.</p>
+        </div>
+
+        <div id="number-display">선택한 숫자: _ _ _ _</div>
+
+        <div class="button-row" id="number-buttons">
+            <!-- 숫자 버튼들 0~9까지 생성 -->
+        </div>
+
+        <div class="input-area">
+            <button id="submit">시도</button>
+            <button id="clear" style="display: none;">지우기</button> <!-- 지우기 버튼 -->
+        </div>
+
+        <div class="result">
+            <h2>결과</h2>
+            <ul id="result-list"></ul>
+        </div>
+
+        <div id="attempt-count"></div>
+        <button id="reset" style="display: none;">게임 다시 시작</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let answer = generateAnswer(); // 정답 생성
+            let attemptCount = 0;
+            let selectedNumbers = []; // 사용자가 선택한 숫자
+            const numberDisplay = document.getElementById('number-display');
+            const numberButtons = document.getElementById('number-buttons');
+            const resultList = document.getElementById('result-list');
+            const submitButton = document.getElementById('submit');
+            const clearButton = document.getElementById('clear'); // 지우기 버튼
+            const resetButton = document.getElementById('reset');
+            const attemptCountDisplay = document.getElementById('attempt-count');
+
+            // 정답 생성 함수 (0~9 사이의 4개의 숫자)
+            function generateAnswer() {
+                const numbers = [];
+                while (numbers.length < 4) {
+                    const num = Math.floor(Math.random() * 10); // 0~9까지의 숫자
+                    numbers.push(num); // 동일한 숫자도 허용
+                }
+                return numbers.join('');
+            }
+
+            // 숫자 버튼 생성 (0~9)
+            for (let i = 0; i <= 9; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.addEventListener('click', () => handleNumberClick(i));
+                numberButtons.appendChild(button);
+            }
+
+            // 숫자 버튼 클릭 처리
+            function handleNumberClick(number) {
+                if (selectedNumbers.length < 4) {
+                    selectedNumbers.push(number);
+                    updateNumberDisplay();
+                }
+            }
+
+            // 선택된 숫자 표시 업데이트
+            function updateNumberDisplay() {
+                numberDisplay.textContent = `선택한 숫자: ${selectedNumbers.join(' ')}`;
+                clearButton.style.display = selectedNumbers.length > 0 ? 'inline-block' : 'none'; // 지우기 버튼 표시
+            }
+
+            // 숫자 야구 결과 계산 함수
+            function checkGuess(guess) {
+                let strike = 0;
+                let ball = 0;
+
+                for (let i = 0; i < 4; i++) {
+                    if (guess[i] === answer[i]) {
+                        strike++;
+                    } else if (answer.includes(guess[i])) {
+                        ball++;
+                    }
+                }
+                return { strike, ball };
+            }
+
+            // 시도 버튼 클릭 처리
+            submitButton.addEventListener('click', () => {
+                if (selectedNumbers.length !== 4) {
+                    alert('4개의 숫자를 선택하세요.');
+                    return;
+                }
+
+                const guess = selectedNumbers.join('');
+                attemptCount++;
+                const { strike, ball } = checkGuess(guess);
+
+                // 결과 출력
+                const resultItem = document.createElement('li');
+                resultItem.textContent = `시도 ${attemptCount}: ${guess} -> ${strike}스트라이크, ${ball}볼`;
+                resultList.appendChild(resultItem);
+
+                // 시도 횟수 표시
+                attemptCountDisplay.textContent = `현재 시도 횟수: ${attemptCount}`;
+
+                // 정답을 맞춘 경우
+                if (strike === 4) {
+                    alert(`축하합니다! ${attemptCount}번 만에 정답을 맞추셨습니다.`);
+                    submitButton.disabled = true;
+                    resetButton.style.display = 'block';
+                }
+
+                selectedNumbers = []; // 입력창 초기화
+                updateNumberDisplay(); // 숫자 표시 업데이트
+            });
+
+            // 숫자 지우기 버튼 클릭 처리
+            clearButton.addEventListener('click', () => {
+                selectedNumbers.pop(); // 마지막 선택한 숫자 지우기
+                updateNumberDisplay(); // 숫자 표시 업데이트
+            });
+
+            // 게임 다시 시작하기
+            resetButton.addEventListener('click', () => {
+                answer = generateAnswer();
+                attemptCount = 0;
+                selectedNumbers = [];
+                resultList.innerHTML = '';
+                numberDisplay.textContent = '선택한 숫자: _ _ _ _';
+                submitButton.disabled = false;
+                resetButton.style.display = 'none';
+                attemptCountDisplay.textContent = '';
+            });
+        });
+    </script>
+
+</body>
+</html>
